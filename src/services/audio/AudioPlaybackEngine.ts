@@ -1,4 +1,4 @@
-import { Audio, AVPlaybackStatus } from 'expo-av';
+import { createAudioPlayer, setAudioModeAsync, AudioPlayer, AudioStatus } from 'expo-audio';
 import { Platform } from 'react-native';
 import { RadioStation } from '../../types/station';
 import { AudioPlaybackState, PlaybackStatus } from '../../types/audio';
@@ -9,7 +9,7 @@ type Listener = (state: AudioPlaybackState) => void;
 
 class AudioPlaybackEngine {
   private static instance: AudioPlaybackEngine;
-  private sound: Audio.Sound | null = null;
+  private sound: AudioPlayer | null = null;
   private htmlAudio: HTMLAudioElement | null = null;
   private hlsInstance: any = null;
   private listeners: Set<Listener> = new Set();
@@ -42,12 +42,10 @@ class AudioPlaybackEngine {
     if (this.audioModeConfigured) return;
     try {
       if (Platform.OS !== 'web') {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          staysActiveInBackground: true,
-          playsInSilentModeIOS: true,
-          shouldDuckAndroid: true,
-          playThroughEarpieceAndroid: false,
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'doNotMix',
         });
       }
       this.audioModeConfigured = true;
@@ -180,22 +178,41 @@ class AudioPlaybackEngine {
 
       if (requestId !== this.currentPlayRequestId) return;
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: station.streamUrl },
-        {
-          shouldPlay: true,
-          volume: this.state.isMuted ? 0 : this.state.volume,
-          isLooping: false,
-        },
-        (status) => this.onPlaybackStatusUpdate(status, requestId, station)
-      );
+      if (this.sound) {
+        try {
+          this.sound.pause();
+          this.sound.remove();
+        } catch {}
+        this.sound = null;
+      }
+
+      const player = createAudioPlayer(station.streamUrl, {
+        updateInterval: 500,
+      });
+
+      player.volume = this.state.isMuted ? 0 : this.state.volume;
+
+      player.addListener('playbackStatusUpdate', (status: AudioStatus) => {
+        this.onPlaybackStatusUpdate(status, requestId, station);
+      });
+
+      try {
+        player.setActiveForLockScreen(true, {
+          title: station.name,
+          artist: formatStationLocation(station),
+          albumTitle: 'fmX Global Radio',
+        });
+      } catch (lockErr) {
+        console.warn('[fmX Audio] Lock screen setup notice:', lockErr);
+      }
 
       if (requestId !== this.currentPlayRequestId) {
-        sound.unloadAsync().catch(() => {});
+        player.remove();
         return;
       }
 
-      this.sound = sound;
+      this.sound = player;
+      player.play();
     } catch (err: any) {
       if (requestId !== this.currentPlayRequestId) return;
 
@@ -211,21 +228,19 @@ class AudioPlaybackEngine {
   }
 
   private onPlaybackStatusUpdate = (
-    status: AVPlaybackStatus,
+    status: AudioStatus,
     requestId: number,
     station: RadioStation
   ) => {
     if (requestId !== this.currentPlayRequestId) return;
 
-    if (!status.isLoaded) {
-      if (status.error) {
-        streamHealthTracker.recordStreamFailure(station.streamUrl, status.error);
-        this.notify({
-          status: 'error',
-          errorMessage: `Stream error: ${status.error}`,
-          bufferingProgress: 0,
-        });
-      }
+    if (status.error) {
+      streamHealthTracker.recordStreamFailure(station.streamUrl, status.error);
+      this.notify({
+        status: 'error',
+        errorMessage: `Stream error: ${status.error}`,
+        bufferingProgress: 0,
+      });
       return;
     }
 
@@ -234,14 +249,14 @@ class AudioPlaybackEngine {
         status: 'loading',
         bufferingProgress: 0.6,
       });
-    } else if (status.isPlaying) {
+    } else if (status.playing) {
       streamHealthTracker.recordStreamSuccess(station.streamUrl);
       this.notify({
         status: 'playing',
         errorMessage: null,
         bufferingProgress: 1,
       });
-    } else {
+    } else if (status.isLoaded) {
       if (this.state.status !== 'paused' && this.state.status !== 'idle') {
         this.notify({ status: 'paused' });
       }
@@ -436,7 +451,7 @@ class AudioPlaybackEngine {
       if (Platform.OS === 'web' && this.htmlAudio) {
         this.htmlAudio.pause();
       } else if (this.sound) {
-        await this.sound.pauseAsync();
+        this.sound.pause();
       }
       this.notify({ status: 'paused' });
     } catch (err: any) {
@@ -453,7 +468,7 @@ class AudioPlaybackEngine {
       if (Platform.OS === 'web' && this.htmlAudio) {
         await this.htmlAudio.play();
       } else if (this.sound) {
-        await this.sound.playAsync();
+        this.sound.play();
       }
       this.notify({ status: 'playing' });
     } catch (err: any) {
@@ -483,7 +498,7 @@ class AudioPlaybackEngine {
     if (Platform.OS === 'web' && this.htmlAudio) {
       this.htmlAudio.volume = clamped;
     } else if (this.sound) {
-      await this.sound.setVolumeAsync(clamped);
+      this.sound.volume = clamped;
     }
   }
 
@@ -495,7 +510,8 @@ class AudioPlaybackEngine {
     if (Platform.OS === 'web' && this.htmlAudio) {
       this.htmlAudio.volume = targetVolume;
     } else if (this.sound) {
-      await this.sound.setVolumeAsync(targetVolume);
+      this.sound.muted = nextMute;
+      this.sound.volume = targetVolume;
     }
   }
 
@@ -514,8 +530,13 @@ class AudioPlaybackEngine {
       }
 
       if (this.sound) {
-        await this.sound.stopAsync().catch(() => {});
-        await this.sound.unloadAsync().catch(() => {});
+        try {
+          this.sound.pause();
+          this.sound.clearLockScreenControls();
+          this.sound.remove();
+        } catch (e) {
+          console.warn('[fmX Audio] Player cleanup notice:', e);
+        }
         this.sound = null;
       }
     } catch (err) {

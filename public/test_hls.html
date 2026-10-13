@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>fmX Audio Diagnostic Suite</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.15/dist/hls.min.js"></script>
+  <style>
+    body { background: #171717; color: #fff; font-family: monospace; padding: 20px; }
+    .station { border: 1px solid #525252; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    button { background: #fff; color: #000; border: none; padding: 6px 12px; cursor: pointer; font-weight: bold; }
+    .status { margin-left: 10px; color: #a3a3a3; }
+  </style>
+</head>
+<body>
+  <h2>fmX Real Audio Playback Diagnostics</h2>
+  <div id="results"></div>
+
+  <script>
+    const stations = [
+      { id: 'air', name: 'AIR Chennai Vividh Bharati', url: 'https://air.pc.cdn.bitgravity.com/air/live/pbaudio001/playlist.m3u8', type: 'hls' },
+      { id: 'tamil', name: 'US Tamil FM', url: 'https://s2.voscast.com:8162/stream', type: 'direct' },
+      { id: 'bbc', name: 'BBC World Service', url: 'https://stream.live.vc.bbcmedia.co.uk/bbc_world_service', type: 'direct' },
+      { id: 'kexp', name: 'KEXP Seattle', url: 'https://kexp.streamguys1.com/kexp160.aac', type: 'direct' },
+      { id: 'wnyc', name: 'WNYC New York', url: 'https://fm939.wnyc.org/wnycfm-web', type: 'direct' },
+      { id: 'fip', name: 'FIP Paris', url: 'https://icecast.radiofrance.fr/fip-midfi.mp3', type: 'direct' }
+    ];
+
+    let currentAudio = null;
+    let currentHls = null;
+
+    function playStation(s, statusEl) {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.src = '';
+        currentAudio = null;
+      }
+      if (currentHls) {
+        currentHls.destroy();
+        currentHls = null;
+      }
+
+      statusEl.textContent = 'TUNING / CONNECTING...';
+      const audio = new Audio();
+      currentAudio = audio;
+
+      if (s.type === 'hls') {
+        if (Hls.isSupported()) {
+          const hls = new Hls({ manifestLoadingTimeOut: 10000, lowLatencyMode: true });
+          currentHls = hls;
+          hls.loadSource(s.url);
+          hls.attachMedia(audio);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            statusEl.textContent = 'MANIFEST PARSED -> PLAYING...';
+            audio.play()
+              .then(() => { statusEl.textContent = 'SUCCESS: PLAYING LIVE AUDIO!'; statusEl.style.color = '#fff'; })
+              .catch(e => { statusEl.textContent = 'AUTOPLAY BLOCKED: ' + e.message; });
+          });
+          hls.on(Hls.Events.ERROR, (e, data) => {
+            if (data.fatal) {
+              statusEl.textContent = 'FATAL HLS ERROR: ' + data.details;
+              statusEl.style.color = '#f87171';
+            }
+          });
+          return;
+        } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+          audio.src = s.url;
+          audio.play().then(() => { statusEl.textContent = 'NATIVE HLS PLAYING'; });
+          return;
+        } else {
+          statusEl.textContent = 'HLS NOT SUPPORTED IN BROWSER';
+          return;
+        }
+      }
+
+      // Direct stream
+      audio.onplaying = () => {
+        statusEl.textContent = 'SUCCESS: PLAYING LIVE STREAM!';
+        statusEl.style.color = '#fff';
+      };
+      audio.onerror = (e) => {
+        statusEl.textContent = 'ERROR (code ' + (audio.error ? audio.error.code : 'unknown') + ')';
+        statusEl.style.color = '#f87171';
+      };
+      audio.src = s.url;
+      audio.play().catch(e => {
+        statusEl.textContent = 'PLAY ERROR: ' + e.message;
+      });
+    }
+
+    const container = document.getElementById('results');
+    stations.forEach(s => {
+      const div = document.createElement('div');
+      div.className = 'station';
+      const btn = document.createElement('button');
+      btn.textContent = 'TEST ' + s.name;
+      const status = document.createElement('span');
+      status.className = 'status';
+      status.id = 'status_' + s.id;
+      status.textContent = 'IDLE';
+
+      btn.onclick = () => playStation(s, status);
+
+      div.appendChild(btn);
+      div.appendChild(status);
+      container.appendChild(div);
+    });
+  </script>
+</body>
+</html>

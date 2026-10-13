@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { colors } from '../../theme/colors';
 import { FmXLogo } from '../common/FmXLogo';
 
@@ -42,6 +42,27 @@ export const Header: React.FC<HeaderProps> = ({
         <FmXLogo size={40} showWordmark={true} />
 
         <View style={styles.metaGroup}>
+          {Platform.OS === 'web' && (
+            <TouchableOpacity
+              style={styles.apkBadge}
+              onPress={() => {
+                if (typeof window !== 'undefined') {
+                  const a = document.createElement('a');
+                  a.href = '/fmx-radio.apk';
+                  a.download = 'fmX-Global-Radio.apk';
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Download Android App APK"
+            >
+              <Text style={styles.apkIcon}>↓</Text>
+              <Text style={styles.apkText}>GET APP</Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.stationBadge}>
             <View style={styles.liveDot} />
             <Text style={styles.badgeText}>
@@ -117,6 +138,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  apkBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 14,
+    gap: 4,
+  },
+  apkIcon: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000000',
+  },
+  apkText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#000000',
+    letterSpacing: 0.5,
   },
   stationBadge: {
     flexDirection: 'row',

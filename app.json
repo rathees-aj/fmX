@@ -1,17 +1,12 @@
 {
   "expo": {
-    "name": "fmX",
+    "name": "fmX Global Radio",
     "slug": "fmX",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/fmX icon.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#000000",
-    "splash": {
-      "image": "./assets/fmx logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "fm.fmx.radio",
@@ -24,9 +19,10 @@
     },
     "android": {
       "package": "fm.fmx.radio",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#000000",
-        "foregroundImage": "./assets/fmX icon.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
       },
       "permissions": [
         "android.permission.INTERNET",
@@ -44,10 +40,19 @@
         {
           "locationWhenInUsePermission": "Allow fmX to use your location to discover online radio stations near you. Your location is used for nearby discovery."
         }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 240,
+          "resizeMode": "contain",
+          "backgroundColor": "#000000"
+        }
       ]
     ],
     "web": {
-      "favicon": "./assets/fmX icon.png"
+      "favicon": "./assets/favicon.png"
     }
   }
 }

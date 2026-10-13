@@ -7,6 +7,7 @@ import {
   Platform,
   useWindowDimensions,
   Text,
+  BackHandler,
 } from 'react-native';
 import { AudioPlayerProvider, useAudioPlayer } from './src/services/audio/useAudioPlayer';
 import { stationRepository } from './src/services/radio/stationRepository';
@@ -70,6 +71,32 @@ function MainScreen() {
       stationRepository.recordStationPlayed(currentStation);
     }
   }, [currentStation?.id, status]);
+
+  // Handle native Android system back button navigation
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const onBackPress = () => {
+      // 1. Close full station card modal if open
+      if (cardVisible) {
+        setCardVisible(false);
+        return true;
+      }
+      // 2. Return to Explore tab if on secondary tab
+      if (activeTab !== 'explore') {
+        setActiveTab('explore');
+        return true;
+      }
+      // 3. Fallback to default Android behavior (exit app)
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      onBackPress
+    );
+    return () => subscription.remove();
+  }, [cardVisible, activeTab]);
 
   // Regional and genre filtering for the Explore tab
   const displayedStations = useMemo(() => {

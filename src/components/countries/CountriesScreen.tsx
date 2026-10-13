@@ -33,6 +33,7 @@ interface CountriesScreenProps {
   onToggleFavorite: (stationId: string) => void;
   favoriteIds: Set<string>;
   selectedStation?: RadioStation | null;
+  contentBottomPadding?: number;
 }
 
 type BrowseLevel = 'countries' | 'states' | 'cities' | 'stations';
@@ -42,6 +43,7 @@ export const CountriesScreen: React.FC<CountriesScreenProps> = ({
   onToggleFavorite,
   favoriteIds,
   selectedStation,
+  contentBottomPadding,
 }) => {
   const { currentStation, status, playStation, pause, resume } = useAudioPlayer();
 
@@ -388,7 +390,10 @@ export const CountriesScreen: React.FC<CountriesScreenProps> = ({
         <FlatList
           data={displayedCountries}
           keyExtractor={(item) => item.code || item.name}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[
+            styles.listContainer,
+            contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null,
+          ]}
           renderItem={({ item }) => (
             <TouchableOpacity
               activeOpacity={0.7}
@@ -425,7 +430,10 @@ export const CountriesScreen: React.FC<CountriesScreenProps> = ({
           <FlatList
             data={displayedStates}
             keyExtractor={(item) => item.name}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={[
+              styles.listContainer,
+              contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null,
+            ]}
             renderItem={({ item }) => (
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -459,7 +467,10 @@ export const CountriesScreen: React.FC<CountriesScreenProps> = ({
           <FlatList
             data={cities}
             keyExtractor={(item) => item}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={[
+              styles.listContainer,
+              contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null,
+            ]}
             renderItem={({ item }) => (
               <TouchableOpacity
                 activeOpacity={0.7}
@@ -477,7 +488,10 @@ export const CountriesScreen: React.FC<CountriesScreenProps> = ({
         <FlatList
           data={stations}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[
+            styles.listContainer,
+            contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null,
+          ]}
           onEndReachedThreshold={0.4}
           onEndReached={handleLoadMoreStations}
           ListFooterComponent={() =>
@@ -802,6 +816,7 @@ const styles = StyleSheet.create({
   },
   stationInfoCol: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   stationTitleRow: {
@@ -814,6 +829,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     flex: 1,
+    minWidth: 0,
     lineHeight: 22,
   },
   locationText: {

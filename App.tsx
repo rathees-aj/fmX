@@ -2,13 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
   View,
-  SafeAreaView,
   StatusBar,
   Platform,
   useWindowDimensions,
   Text,
   BackHandler,
 } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AudioPlayerProvider, useAudioPlayer } from './src/services/audio/useAudioPlayer';
 import { stationRepository } from './src/services/radio/stationRepository';
 import { RadioStation } from './src/types/station';
@@ -29,8 +29,12 @@ import { isStationInRegion, isTamilLanguageStation, isStationInIndia } from './s
 function MainScreen() {
   const { width } = useWindowDimensions();
   const isWideScreen = width >= 768;
+  const insets = useSafeAreaInsets();
 
   const { currentStation, status, playStation } = useAudioPlayer();
+
+  const isMiniPlayerActive = Boolean(currentStation && status !== 'idle');
+  const listBottomPadding = 56 + insets.bottom + (isMiniPlayerActive ? 58 : 0) + 24;
 
   const [allStations, setAllStations] = useState<RadioStation[]>([]);
   const [selectedStation, setSelectedStation] = useState<RadioStation | null>(null);
@@ -203,6 +207,7 @@ function MainScreen() {
             onToggleFavorite={handleToggleFavorite}
             favoriteIds={favoriteIds}
             selectedStation={selectedStation}
+            contentBottomPadding={listBottomPadding}
           />
         );
 
@@ -213,6 +218,7 @@ function MainScreen() {
             onToggleFavorite={handleToggleFavorite}
             favoriteIds={favoriteIds}
             selectedStation={selectedStation}
+            contentBottomPadding={listBottomPadding}
           />
         );
 
@@ -223,6 +229,7 @@ function MainScreen() {
             onToggleFavorite={handleToggleFavorite}
             favoriteIds={favoriteIds}
             selectedStation={selectedStation}
+            contentBottomPadding={listBottomPadding}
           />
         );
 
@@ -233,6 +240,7 @@ function MainScreen() {
             onToggleFavorite={handleToggleFavorite}
             favoriteIds={favoriteIds}
             selectedStation={selectedStation}
+            contentBottomPadding={listBottomPadding}
           />
         );
 
@@ -255,6 +263,7 @@ function MainScreen() {
                   favoriteIds={favoriteIds}
                   activeFilter={activeFilter}
                   isLoadingDirectory={isFilterLoading}
+                  contentBottomPadding={listBottomPadding}
                 />
               </View>
 
@@ -301,6 +310,7 @@ function MainScreen() {
               favoriteIds={favoriteIds}
               activeFilter={activeFilter}
               isLoadingDirectory={isFilterLoading}
+              contentBottomPadding={listBottomPadding}
             />
 
             {/* Mobile Selected Station Floating Sheet */}
@@ -325,15 +335,25 @@ function MainScreen() {
 
   if (isBootstrapping) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View
+        style={[
+          styles.rootContainer,
+          { paddingTop: Platform.OS === 'android' ? Math.max(insets.top, StatusBar.currentHeight || 0) : insets.top },
+        ]}
+      >
         <StatusBar barStyle="light-content" backgroundColor={colors.pureBlack} />
         <LoadingScreen />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View
+      style={[
+        styles.rootContainer,
+        { paddingTop: Platform.OS === 'android' ? Math.max(insets.top, StatusBar.currentHeight || 0) : insets.top },
+      ]}
+    >
       <StatusBar barStyle="light-content" backgroundColor={colors.pureBlack} />
 
       {/* fmX Brand Header */}
@@ -362,27 +382,29 @@ function MainScreen() {
         onSelectTab={setActiveTab}
         savedCount={favoriteIds.size}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 export default function App() {
   return (
-    <AudioPlayerProvider>
-      <MainScreen />
-    </AudioPlayerProvider>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: colors.pureBlack }}>
+      <AudioPlayerProvider>
+        <MainScreen />
+      </AudioPlayerProvider>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  rootContainer: {
     flex: 1,
     backgroundColor: colors.pureBlack,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   mainContentArea: {
     flex: 1,
     backgroundColor: colors.pureBlack,
+    minWidth: 0,
   },
   twoColumnContainer: {
     flex: 1,

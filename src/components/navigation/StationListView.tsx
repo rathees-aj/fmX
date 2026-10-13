@@ -15,6 +15,7 @@ interface StationListViewProps {
   favoriteIds: Set<string>;
   activeFilter: string;
   isLoadingDirectory?: boolean;
+  contentBottomPadding?: number;
 }
 
 export const StationListView: React.FC<StationListViewProps> = ({
@@ -25,6 +26,7 @@ export const StationListView: React.FC<StationListViewProps> = ({
   favoriteIds,
   activeFilter,
   isLoadingDirectory = false,
+  contentBottomPadding,
 }) => {
   const { currentStation, status, playStation, pause, resume } = useAudioPlayer();
 
@@ -37,14 +39,6 @@ export const StationListView: React.FC<StationListViewProps> = ({
     const isPaused = isCurrent && status === 'paused';
     const isFav = favoriteIds.has(item.id);
 
-    const monogram = item.name
-      .replace(/[^a-zA-Z0-9 ]/g, '')
-      .split(' ')
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0].toUpperCase())
-      .join('') || 'FM';
-
     return (
       <TouchableOpacity
         activeOpacity={0.7}
@@ -56,32 +50,34 @@ export const StationListView: React.FC<StationListViewProps> = ({
         ]}
       >
         {/* Station Artwork Cover */}
-        <StationArtwork station={item} size={44} />
+        <View style={styles.artworkWrap}>
+          <StationArtwork station={item} size={44} />
+        </View>
 
         {/* Station Details */}
         <View style={styles.infoCol}>
           <View style={styles.titleRow}>
-            <Text style={styles.stationTitle}>
+            <Text style={styles.stationTitle} numberOfLines={2} ellipsizeMode="tail">
               {item.name}
             </Text>
+            {isPlaying && <WaveformIndicator status={status} barCount={3} height={14} />}
+          </View>
+
+          <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+            {formatStationLocation(item)}
+          </Text>
+
+          <View style={styles.metaRow}>
             {isSelected && (
               <View style={styles.selectedPill}>
                 <Text style={styles.selectedPillText}>SELECTED</Text>
               </View>
             )}
-            {isPlaying && <WaveformIndicator status={status} barCount={3} height={14} />}
-          </View>
-
-          <Text style={styles.locationText}>
-            {formatStationLocation(item)}
-          </Text>
-
-          <View style={styles.metaRow}>
             {item.frequency ? (
               <Text style={styles.freqTag}>{item.frequency}</Text>
             ) : null}
-            <Text style={styles.genreText}>
-              {item.genres[0] || 'GLOBAL BROADCAST'}
+            <Text style={styles.genreText} numberOfLines={1}>
+              {item.genres[0] || 'GLOBAL'}
             </Text>
             <Text style={styles.dotSeparator}>·</Text>
             <Text style={styles.codecText}>
@@ -177,7 +173,10 @@ export const StationListView: React.FC<StationListViewProps> = ({
         data={stations}
         keyExtractor={(item) => item.id}
         renderItem={renderStationItem}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[
+          styles.listContent,
+          contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null,
+        ]}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={() =>
           isLoadingDirectory ? (
@@ -275,75 +274,87 @@ const styles = StyleSheet.create({
   monogramTextSelected: {
     color: colors.white,
   },
+  artworkWrap: {
+    width: 44,
+    height: 44,
+    flexShrink: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   infoCol: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
-    gap: 2,
+    gap: 3,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    minWidth: 0,
   },
   stationTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.white,
-    lineHeight: 22,
-    flexWrap: 'wrap',
+    lineHeight: 20,
     flex: 1,
+    minWidth: 0,
   },
   locationText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '500',
     color: colors.offWhite,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 5,
     marginTop: 2,
   },
   freqTag: {
     fontFamily: 'Courier',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
     color: colors.white,
     backgroundColor: colors.surfaceDark,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
     borderWidth: 1,
     borderColor: colors.borderMedium,
     borderRadius: 2,
     letterSpacing: 0.5,
   },
   genreText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
     color: colors.lightSilver,
     textTransform: 'uppercase',
   },
   dotSeparator: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.midGray,
   },
   codecText: {
     fontFamily: 'Courier',
-    fontSize: 11,
+    fontSize: 10,
     color: colors.midGray,
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
   actionsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   favBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 4,
+    width: 44,
+    height: 44,
+    minWidth: 44,
+    minHeight: 44,
+    borderRadius: 6,
     backgroundColor: colors.surfaceDark,
     borderWidth: 1,
     borderColor: colors.borderMedium,
@@ -362,13 +373,14 @@ const styles = StyleSheet.create({
     color: '#FFD700',
   },
   playBtn: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
+    height: 44,
     minHeight: 44,
-    borderRadius: 4,
+    borderRadius: 6,
     backgroundColor: colors.surfaceDark,
     borderWidth: 1,
     borderColor: colors.borderMedium,
-    minWidth: 74,
+    minWidth: 68,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -442,16 +454,16 @@ const styles = StyleSheet.create({
   },
   selectedPill: {
     backgroundColor: colors.white,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 2,
-    marginLeft: 6,
+    paddingHorizontal: 5,
+    paddingVertical: 1.5,
+    borderRadius: 3,
+    flexShrink: 0,
   },
   selectedPillText: {
     fontFamily: 'Courier',
     fontSize: 8,
-    fontWeight: '800',
+    fontWeight: '900',
     color: colors.pureBlack,
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
 });

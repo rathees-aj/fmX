@@ -152,6 +152,7 @@ const styles = StyleSheet.create({
   },
   infoArea: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
@@ -174,6 +175,7 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
     gap: 2,
   },
@@ -188,6 +190,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     letterSpacing: -0.2,
     flex: 1,
+    minWidth: 0,
   },
   stationLocation: {
     fontSize: 11,

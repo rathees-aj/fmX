@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Platform, useWindowDimensions } from 'react-native';
 import { colors } from '../../theme/colors';
 import { FmXLogo } from '../common/FmXLogo';
 
@@ -20,7 +20,13 @@ export const Header: React.FC<HeaderProps> = ({
   showInlineSearch = false,
   showSearchBar = true,
 }) => {
+  const { width } = useWindowDimensions();
   const [utcTime, setUtcTime] = useState('');
+
+  const isSmallMobile = width < 360;
+  const isMobile = width < 480;
+  const showUtcClock = width >= 440;
+  const logoSize = isSmallMobile ? 32 : isMobile ? 36 : 40;
 
   useEffect(() => {
     const updateTime = () => {
@@ -35,16 +41,25 @@ export const Header: React.FC<HeaderProps> = ({
     return () => clearInterval(interval);
   }, []);
 
+  const searchPlaceholder =
+    width < 360
+      ? 'Search stations...'
+      : width < 440
+      ? 'Search stations, genres...'
+      : 'Search stations, cities, countries, genres...';
+
   return (
     <View style={styles.header}>
-      {/* Brand Identity */}
+      {/* Brand Identity Row */}
       <View style={styles.brandRow}>
-        <FmXLogo size={40} showWordmark={true} />
+        <View style={styles.logoWrap}>
+          <FmXLogo size={logoSize} showWordmark={true} />
+        </View>
 
-        <View style={styles.metaGroup}>
+        <View style={[styles.metaGroup, isMobile && styles.metaGroupMobile]}>
           {Platform.OS === 'web' && (
             <TouchableOpacity
-              style={styles.apkBadge}
+              style={[styles.apkBadge, isSmallMobile && styles.apkBadgeCompact]}
               onPress={() => {
                 if (typeof window !== 'undefined') {
                   const a = document.createElement('a');
@@ -59,17 +74,22 @@ export const Header: React.FC<HeaderProps> = ({
               accessibilityLabel="Download Android App APK"
             >
               <Text style={styles.apkIcon}>↓</Text>
-              <Text style={styles.apkText}>GET APP</Text>
+              <Text style={styles.apkText}>{isSmallMobile ? 'APP' : 'GET APP'}</Text>
             </TouchableOpacity>
           )}
 
-          <View style={styles.stationBadge}>
+          <View style={[styles.stationBadge, isSmallMobile && styles.stationBadgeCompact]}>
             <View style={styles.liveDot} />
-            <Text style={styles.badgeText}>
-              {stationCount > 0 ? `${stationCount} ON AIR` : 'GLOBAL RADIO'}
+            <Text style={styles.badgeText} numberOfLines={1}>
+              {stationCount > 0 ? (isSmallMobile ? `${stationCount}` : `${stationCount} ON AIR`) : 'LIVE'}
             </Text>
           </View>
-          <Text style={styles.utcText}>{utcTime}</Text>
+
+          {showUtcClock && (
+            <Text style={styles.utcText} numberOfLines={1}>
+              {utcTime}
+            </Text>
+          )}
         </View>
       </View>
 
@@ -80,7 +100,7 @@ export const Header: React.FC<HeaderProps> = ({
             <Text style={styles.searchIcon}>⌕</Text>
             <TextInput
               style={styles.inlineSearchInput}
-              placeholder="Search stations, cities, countries, genres..."
+              placeholder={searchPlaceholder}
               placeholderTextColor="#8E8E93"
               value={searchQuery}
               onChangeText={onSearchChange}
@@ -106,8 +126,8 @@ export const Header: React.FC<HeaderProps> = ({
             accessibilityLabel="Open global station search"
           >
             <Text style={styles.searchIcon}>⌕</Text>
-            <Text style={styles.searchPlaceholderText}>
-              Search stations, cities, countries, genres...
+            <Text style={styles.searchPlaceholderText} numberOfLines={1} ellipsizeMode="tail">
+              {searchPlaceholder}
             </Text>
             <View style={styles.searchShortcutTag}>
               <Text style={styles.searchShortcutText}>SEARCH</Text>
@@ -127,17 +147,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 12,
-    gap: 12,
+    gap: 10,
+    width: '100%',
+    maxWidth: '100%',
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    width: '100%',
+    maxWidth: '100%',
+    gap: 8,
+  },
+  logoWrap: {
+    flexShrink: 0,
+    justifyContent: 'center',
   },
   metaGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
+    flexShrink: 0,
+  },
+  metaGroupMobile: {
+    gap: 6,
   },
   apkBadge: {
     flexDirection: 'row',
@@ -149,6 +182,11 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 14,
     gap: 4,
+    flexShrink: 0,
+  },
+  apkBadgeCompact: {
+    paddingHorizontal: 6,
+    paddingVertical: 3,
   },
   apkIcon: {
     fontSize: 11,
@@ -171,6 +209,12 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 14,
     gap: 6,
+    flexShrink: 0,
+  },
+  stationBadgeCompact: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    gap: 4,
   },
   liveDot: {
     width: 6,
@@ -188,6 +232,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'monospace',
     color: '#8E8E93',
+    flexShrink: 0,
   },
   searchQuickBtn: {
     flexDirection: 'row',
@@ -199,6 +244,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 44,
     gap: 10,
+    width: '100%',
+    maxWidth: '100%',
   },
   inlineSearchContainer: {
     flexDirection: 'row',
@@ -210,9 +257,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 44,
     gap: 10,
+    width: '100%',
+    maxWidth: '100%',
   },
   inlineSearchInput: {
     flex: 1,
+    minWidth: 0,
     fontSize: 15,
     color: '#FFFFFF',
     height: '100%',
@@ -223,6 +273,7 @@ const styles = StyleSheet.create({
     minHeight: 32,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   clearBtnText: {
     color: '#8E8E93',
@@ -232,9 +283,11 @@ const styles = StyleSheet.create({
   searchIcon: {
     fontSize: 18,
     color: '#8E8E93',
+    flexShrink: 0,
   },
   searchPlaceholderText: {
     flex: 1,
+    minWidth: 0,
     fontSize: 14,
     color: '#8E8E93',
   },
@@ -243,6 +296,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
+    flexShrink: 0,
   },
   searchShortcutText: {
     fontSize: 10,

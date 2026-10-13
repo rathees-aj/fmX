@@ -21,6 +21,7 @@ interface SavedScreenProps {
   onToggleFavorite: (stationId: string) => void;
   favoriteIds: Set<string>;
   selectedStation?: RadioStation | null;
+  contentBottomPadding?: number;
 }
 
 export const SavedScreen: React.FC<SavedScreenProps> = ({
@@ -28,6 +29,7 @@ export const SavedScreen: React.FC<SavedScreenProps> = ({
   onToggleFavorite,
   favoriteIds,
   selectedStation,
+  contentBottomPadding,
 }) => {
   const { currentStation, status, playStation, pause, resume } = useAudioPlayer();
 
@@ -188,7 +190,10 @@ export const SavedScreen: React.FC<SavedScreenProps> = ({
           data={savedStations}
           keyExtractor={(item) => item.id}
           renderItem={renderStationItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            contentBottomPadding != null ? { paddingBottom: contentBottomPadding } : null,
+          ]}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyIcon}>★</Text>
@@ -304,6 +309,7 @@ const styles = StyleSheet.create({
   },
   stationInfo: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   titleRow: {
@@ -318,6 +324,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     flexWrap: 'wrap',
     flex: 1,
+    minWidth: 0,
   },
   locationText: {
     fontSize: 13,

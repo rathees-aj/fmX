@@ -41,6 +41,7 @@ export const StationFilterBar: React.FC<StationFilterBarProps> = ({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.scrollView}
         contentContainerStyle={styles.container}
       >
         {DISCOVERY_FILTERS.map((f, idx) => {
@@ -67,6 +68,7 @@ export const StationFilterBar: React.FC<StationFilterBarProps> = ({
                     f.category === 'genre' && styles.genreText,
                     isActive && styles.chipTextActive,
                   ]}
+                  numberOfLines={1}
                 >
                   {f.label}
                 </Text>
@@ -84,6 +86,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.pureBlack,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
+    width: '100%',
+    maxWidth: '100%',
+    overflow: 'hidden',
+  },
+  scrollView: {
+    width: '100%',
+    maxWidth: '100%',
   },
   container: {
     paddingHorizontal: 16,
@@ -96,6 +105,7 @@ const styles = StyleSheet.create({
     height: 20,
     backgroundColor: '#333333',
     marginHorizontal: 4,
+    flexShrink: 0,
   },
   chip: {
     paddingHorizontal: 14,
@@ -107,6 +117,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#141414',
     justifyContent: 'center',
     alignItems: 'center',
+    flexShrink: 0,
   },
   genreChip: {
     borderColor: '#2F2F2F',

@@ -431,6 +431,7 @@ const styles = StyleSheet.create({
   },
   detailsColumn: {
     flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
     gap: 4,
   },
@@ -446,6 +447,7 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     flexWrap: 'wrap',
     flex: 1,
+    minWidth: 0,
   },
   locationText: {
     fontSize: 13,
